@@ -9,6 +9,6 @@ public class ClickableTile : MonoBehaviour
     public TileMap map;
     private void OnMouseUp()
     {
-        map.MoveUnitTo(tileX, tileY);
+        map.GeneratePathTo(tileX, tileY);
     }
 }
