@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class TileMap : MonoBehaviour
@@ -7,13 +8,15 @@ public class TileMap : MonoBehaviour
     public TileType[] tileTypes;
 
     int[,] tiles;
+    Node[,] graph;
 
     int mapSizeX = 10;
     int mapSizeY = 10;
     private void Start()
     {
         GenerateMapData();
-        GenerateMapVisual();
+        GeneratePathfindingGraph();
+        GenerateMapVisual();        
     }
 
     private void GenerateMapData()
@@ -48,6 +51,46 @@ public class TileMap : MonoBehaviour
         tiles[4, 6] = 2;
         tiles[8, 5] = 2;
         tiles[8, 6] = 2;
+    }
+
+    class Node
+    {
+        public List<Node> neighbours;
+
+        public Node()
+        {
+            neighbours = new List<Node>();
+        }
+    }
+
+    void GeneratePathfindingGraph()
+    {
+        graph = new Node[mapSizeX,mapSizeY];
+
+        for(int x = 0; x < mapSizeX; x++)
+        {
+            for(int y = 0; y < mapSizeY; y++)
+            {
+                graph[x, y].neighbours.Add(graph[x-1, y]);
+                //For Square map
+                if (x > 0)
+                {
+                    graph[x, y].neighbours.Add(graph[x - 1, y]);
+                }
+                if (x < mapSizeX - 1)
+                {
+                    graph[x, y].neighbours.Add(graph[x + 1, y]);
+                }
+                if (y > 0)
+                {
+                    graph[x, y].neighbours.Add(graph[x, y-1]);
+                }
+                if (y < mapSizeY - 1)
+                {
+                    graph[x, y].neighbours.Add(graph[x, y+1]);
+                }
+            }
+        }   
     }
 
     private void GenerateMapVisual()
