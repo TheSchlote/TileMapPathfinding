@@ -15,6 +15,9 @@ public class TileMap : MonoBehaviour
     int mapSizeY = 10;
     private void Start()
     {
+        selectedUnit.GetComponent<Unit>().tileX = (int)selectedUnit.transform.position.x;
+        selectedUnit.GetComponent<Unit>().tileY = (int)selectedUnit.transform.position.y;
+        selectedUnit.GetComponent<Unit>().map = this;
         GenerateMapData();
         GeneratePathfindingGraph();
         GenerateMapVisual();
@@ -54,24 +57,18 @@ public class TileMap : MonoBehaviour
         tiles[8, 6] = 2;
     }
 
-    public class Node
+    public float CostToEnterTile(int sourceX, int sourceY, int targetX, int targetY)
     {
-        public List<Node> neighbours;
-        public int x;
-        public int y;
-
-        public Node()
+        TileType tt = tileTypes[tiles[targetX, targetY]];
+        //if (UnitCanEnterTile(targetX, targetY) == false)
+        //    return Mathf.Infinity;
+        float cost = tt.movementCost;
+        if (sourceX != targetX && sourceY != targetY)
         {
-            neighbours = new List<Node>();
+            //We are moving diagonally, calculate cost for diagonal movement
+            cost += 0.001f;
         }
-
-        public float DistanceTo(Node n)
-        {
-            return Vector2.Distance(
-                new Vector2(x, y),
-                new Vector2(n.x, n.y)
-                );
-        }
+        return cost;
     }
 
     void GeneratePathfindingGraph()
@@ -185,8 +182,9 @@ public class TileMap : MonoBehaviour
 
             foreach (Node v in u.neighbours)
             {
-                float alt = dist[u] + u.DistanceTo(v);
-                if(alt < dist[v])
+                //float alt = dist[u] + u.DistanceTo(v);
+                float alt = dist[u] + CostToEnterTile(u.x, u.y, v.x, v.y);
+                if (alt < dist[v])
                 {
                     dist[v] = alt;
                     prev[v] = u;
