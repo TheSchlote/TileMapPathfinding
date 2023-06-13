@@ -388,7 +388,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6110aa0c73eb6ed43b568f28d00c6fd2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  selectedUnit: {fileID: 1049372807}
+  selectedGameObject: {fileID: 1049372807}
   tileTypes:
   - name: Grassland
     tileVisualPrefab: {fileID: 4215088964689832279, guid: 164ffcbf9ba6a6b44a76f4389abbe91c, type: 3}
@@ -802,10 +802,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f0bc561a41f33f44da530266bbbb2bec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tileX: 0
-  tileY: 0
-  map: {fileID: 0}
-  movementSpeed: 1
+  currentTileX: 0
+  currentTileY: 0
+  associatedMap: {fileID: 420677434}
+  unitMovementSpeed: 1
 --- !u!1 &1866045203
 GameObject:
   m_ObjectHideFlags: 0
@@ -818,6 +818,7 @@ GameObject:
   - component: {fileID: 1866045207}
   - component: {fileID: 1866045206}
   - component: {fileID: 1866045205}
+  - component: {fileID: 1866045208}
   m_Layer: 5
   m_Name: Button
   m_TagString: Untagged
@@ -892,7 +893,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1049372809}
         m_TargetAssemblyTypeName: Unit, Assembly-CSharp
-        m_MethodName: MoveNextTile
+        m_MethodName: StartMove
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -940,3 +941,16 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1866045203}
   m_CullTransparentMesh: 1
+--- !u!114 &1866045208
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1866045203}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ecd750d7119436549b5a18bc87c8af2e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  unit: {fileID: 1049372809}

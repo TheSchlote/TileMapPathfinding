@@ -1,129 +1,108 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 public class TileMap : MonoBehaviour
 {
-    public GameObject selectedUnit;
+    public GameObject selectedGameObject;
     public TileType[] tileTypes;
 
-    int[,] tiles;
-    Node[,] graph;
-    public List<Node> currentPath;
-    int mapSizeX = 10;
-    int mapSizeY = 10;
+    int[,] tileGrid;
+    Node[,] nodeGrid;
+    public List<Node> currentPathList;
+    private readonly int mapWidth = 10;
+    private readonly int mapLength = 10;
     private void Start()
     {
-        selectedUnit.GetComponent<Unit>().tileX = (int)selectedUnit.transform.position.x;
-        selectedUnit.GetComponent<Unit>().tileY = (int)selectedUnit.transform.position.y;
-        selectedUnit.GetComponent<Unit>().map = this;
-        GenerateMapData();
-        GeneratePathfindingGraph();
-        GenerateMapVisual();
+        Unit selectedUnit = selectedGameObject.GetComponent<Unit>();
+        selectedUnit.currentTileX = (int)selectedGameObject.transform.position.x;
+        selectedUnit.currentTileY = (int)selectedGameObject.transform.position.y;
+        selectedUnit.associatedMap = this;
+        GenerateTileGridData();
+        GenerateNodeGridPathfinding();
+        GenerateVisualRepresentationOfMap();
     }
-
-    private void GenerateMapData()
-    {
-        //Allocate our map tiles
-        tiles = new int[mapSizeX, mapSizeY];
-        //Initialize our map tiles to be grass
-        for (int x = 0; x < mapSizeX; x++)
-        {
-            for (int y = 0; y < mapSizeY; y++)
-            {
-                tiles[x, y] = 0;
-            }
-        }
-
-        for (int x = 3; x <= 5; x++)
-        {
-            for (int y = 0; y < 4; y++)
-            {
-                tiles[x, y] = 1;
-            }
-        }
-
-        //Let's make a u-shaped mountain range
-        tiles[4, 4] = 2;
-        tiles[5, 4] = 2;
-        tiles[6, 4] = 2;
-        tiles[7, 4] = 2;
-        tiles[8, 4] = 2;
-
-        tiles[4, 5] = 2;
-        tiles[4, 6] = 2;
-        tiles[8, 5] = 2;
-        tiles[8, 6] = 2;
-    }
-
     public float CostToEnterTile(int sourceX, int sourceY, int targetX, int targetY)
     {
-        TileType tt = tileTypes[tiles[targetX, targetY]];
-        //if (UnitCanEnterTile(targetX, targetY) == false)
-        //    return Mathf.Infinity;
-        float cost = tt.movementCost;
+        TileType targetTileType = tileTypes[tileGrid[targetX, targetY]];
+
+        float movementCost = targetTileType.movementCost;
+
         if (sourceX != targetX && sourceY != targetY)
         {
-            //We are moving diagonally, calculate cost for diagonal movement
-            cost += 0.001f;
+            // We are moving diagonally, calculate cost for diagonal movement
+            movementCost += 0.001f;
         }
-        return cost;
+
+        return movementCost;
     }
 
-    void GeneratePathfindingGraph()
+    private void GenerateTileGridData()
     {
-        graph = new Node[mapSizeX, mapSizeY];
-        //Initialize a Node for each spot in the array
-        for (int x = 0; x < mapSizeX; x++)
+        tileGrid = new int[mapWidth, mapLength];
+        for (int x = 0; x < mapWidth; x++)
         {
-            for (int y = 0; y < mapSizeY; y++)
+            for (int y = 0; y < mapLength; y++)
             {
-                graph[x, y] = new Node();
-                graph[x, y].x = x;
-                graph[x, y].y = y;
+                tileGrid[x, y] = 0;
+            }
+        }
+    }
+
+    void GenerateNodeGridPathfinding()
+    {
+        nodeGrid = new Node[mapWidth, mapLength];
+        //Initialize a Node for each spot in the array
+        for (int x = 0; x < mapWidth; x++)
+        {
+            for (int y = 0; y < mapLength; y++)
+            {
+                nodeGrid[x, y] = new Node
+                {
+                    x = x,
+                    y = y
+                };
             }
         }
         //Now that all the nodes exist, calculate their neighbours
-        for (int x = 0; x < mapSizeX; x++)
+        for (int x = 0; x < mapWidth; x++)
         {
-            for (int y = 0; y < mapSizeY; y++)
+            for (int y = 0; y < mapLength; y++)
             {
                 //For Square map
                 if (x > 0)
                 {
-                    graph[x, y].neighbours.Add(graph[x - 1, y]);
+                    nodeGrid[x, y].neighbours.Add(nodeGrid[x - 1, y]);
                 }
-                if (x < mapSizeX - 1)
+                if (x < mapWidth - 1)
                 {
-                    graph[x, y].neighbours.Add(graph[x + 1, y]);
+                    nodeGrid[x, y].neighbours.Add(nodeGrid[x + 1, y]);
                 }
                 if (y > 0)
                 {
-                    graph[x, y].neighbours.Add(graph[x, y - 1]);
+                    nodeGrid[x, y].neighbours.Add(nodeGrid[x, y - 1]);
                 }
-                if (y < mapSizeY - 1)
+                if (y < mapLength - 1)
                 {
-                    graph[x, y].neighbours.Add(graph[x, y + 1]);
+                    nodeGrid[x, y].neighbours.Add(nodeGrid[x, y + 1]);
                 }
             }
         }
     }
 
-    private void GenerateMapVisual()
+    private void GenerateVisualRepresentationOfMap()
     {
         //Now that we have our map data, let's spawn the visual prefabs
-        for (int x = 0; x < mapSizeX; x++)
+        for (int x = 0; x < mapWidth; x++)
         {
-            for (int y = 0; y < mapSizeY; y++)
+            for (int y = 0; y < mapLength; y++)
             {
-                TileType tt = tileTypes[tiles[x, y]];
-                GameObject go = Instantiate(tt.tileVisualPrefab, new Vector3(x, y, 0), Quaternion.identity);
+                TileType currentTileType = tileTypes[tileGrid[x, y]];
+                GameObject newTileObject = Instantiate(currentTileType.tileVisualPrefab, new Vector3(x, y, 0), Quaternion.identity);
 
-                ClickableTile ct = go.GetComponent<ClickableTile>();
-                ct.tileX = x;
-                ct.tileY = y;
-                ct.map = this;
+                ClickableTile clickableTileComponent = newTileObject.GetComponent<ClickableTile>();
+                clickableTileComponent.tileX = x;
+                clickableTileComponent.tileY = y;
+                clickableTileComponent.map = this;
             }
         }
     }
@@ -131,81 +110,75 @@ public class TileMap : MonoBehaviour
     {
         return new Vector3(x, y, 0);
     }
-    public void GeneratePathTo(int x, int y)
+    public void GeneratePathTo(int destinationX, int destinationY)
     {
         //Clear out our unit's old path.
-        selectedUnit.GetComponent<Unit>().currentPath = null;
+        Unit selectedUnit = selectedGameObject.GetComponent<Unit>();
+        selectedUnit.currentPathList = null;
 
-        Dictionary<Node, float> dist = new Dictionary<Node, float>();
-        Dictionary<Node, Node> prev = new Dictionary<Node, Node>();
-
-        List<Node> unvisited = new List<Node>();
-
-        Node source = graph[
-                            selectedUnit.GetComponent<Unit>().tileX,
-                            selectedUnit.GetComponent<Unit>().tileY
-                            ];
-        Node target = graph[x,y];
-                            
-
-        dist[source] = 0;
-        prev[source] = null;
-
-        foreach (Node v in graph)
+        Dictionary<Node, float> nodeDistanceMap = new();
+        Node sourceNode = nodeGrid[selectedUnit.currentTileX, selectedUnit.currentTileY];
+        nodeDistanceMap[sourceNode] = 0;
+        Dictionary<Node, Node> previousNodeMap = new()
         {
-            if (v != source)
+            [sourceNode] = null
+        };
+
+        List<Node> unvisitedNodes = new();
+        foreach (Node currentNode in nodeGrid)
+        {
+            if (currentNode != sourceNode)
             {
-                dist[v] = Mathf.Infinity;
-                prev[v] = null;
+                nodeDistanceMap[currentNode] = Mathf.Infinity;
+                previousNodeMap[currentNode] = null;
             }
 
-            unvisited.Add(v);
+            unvisitedNodes.Add(currentNode);
         }
-        while (unvisited.Count > 0)
+        Node targetNode = nodeGrid[destinationX, destinationY];
+        while (unvisitedNodes.Count > 0)
         {
-            //Node u = unvisited.OrderBy(n => dist[n]).First();
-            Node u = null;
-            foreach(Node possibleU in unvisited)
+            Node shortestDistanceNode = null;
+            foreach (Node possibleNode in unvisitedNodes)
             {
-                if(u == null || dist[possibleU] < dist[u])
+                if (shortestDistanceNode == null || nodeDistanceMap[possibleNode] < nodeDistanceMap[shortestDistanceNode])
                 {
-                    u = possibleU;
+                    shortestDistanceNode = possibleNode;
                 }
             }
 
-            if (u == target) 
-            { 
-                break; 
+            if (shortestDistanceNode == targetNode)
+            {
+                break;
             }
 
-            unvisited.Remove(u);
+            unvisitedNodes.Remove(shortestDistanceNode);
 
-            foreach (Node v in u.neighbours)
+            foreach (Node neighbourNode in shortestDistanceNode.neighbours)
             {
-                //float alt = dist[u] + u.DistanceTo(v);
-                float alt = dist[u] + CostToEnterTile(u.x, u.y, v.x, v.y);
-                if (alt < dist[v])
+                float alternatePathDistance = nodeDistanceMap[shortestDistanceNode];
+                if (alternatePathDistance < nodeDistanceMap[neighbourNode])
                 {
-                    dist[v] = alt;
-                    prev[v] = u;
+                    nodeDistanceMap[neighbourNode] = alternatePathDistance;
+                    previousNodeMap[neighbourNode] = shortestDistanceNode;
                 }
             }
         }
-        if (prev[target] == null)
+        if (previousNodeMap[targetNode] == null)
         {
             //No route between target and source
             return;
         }
-        List<Node> currentPath = new List<Node>();
-        Node curr = target;
+        List<Node> currentPath = new();
+        Node curr = targetNode;
 
         while (curr != null)
         {
             currentPath.Add(curr);
-            curr = prev[curr];
+            curr = previousNodeMap[curr];
         }
         currentPath.Reverse();
-        
-        selectedUnit.GetComponent<Unit>().currentPath = currentPath;
+
+        selectedUnit.currentPathList = currentPath;
     }
 }
